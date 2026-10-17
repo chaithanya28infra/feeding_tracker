@@ -28,14 +28,23 @@ create publication supabase_realtime;
     run(psql,input=bootstrap)
     for path in sorted((root/'supabase/migrations').glob('*.sql')):
         try:
+            if path.name == '005_baby_creation_access.sql':
+                before=subprocess.run(psql+['-f',str(root/'supabase/tests/baby_creation_checks.sql')],text=True,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+                if before.returncode == 0 or 'new row violates row-level security policy' not in before.stdout:
+                    raise RuntimeError('Expected original INSERT RETURNING RLS failure: '+before.stdout)
+                print('PASS reproduced original INSERT RETURNING RLS failure before repair.',flush=True)
+                # Reproduce a deployment without a default authenticated INSERT grant.
+                run(psql,input='REVOKE INSERT ON public.babies FROM authenticated;')
             run(psql+['-f',str(path)])
             print('PASS migration:',path.name,flush=True)
         except subprocess.CalledProcessError as e:
             print(e.stdout,flush=True);raise
     for attempt in range(2):
-        result=run(psql+['-f',str(root/'supabase/tests/caregiver_privacy_checks.sql')])
-        for line in result.splitlines():
-            if 'PASS:' in line: print(f'Run {attempt+1}: '+line.strip(),flush=True)
+        run(psql+['-f',str(root/'supabase/migrations/005_baby_creation_access.sql')])
+        for check in ['baby_creation_checks.sql','caregiver_privacy_checks.sql']:
+            result=run(psql+['-f',str(root/'supabase/tests'/check)])
+            for line in result.splitlines():
+                if 'PASS:' in line: print(f'Run {attempt+1}: '+line.strip(),flush=True)
     print('PASS local PostgreSQL validation; cluster is temporary.',flush=True)
 except subprocess.CalledProcessError as e:
     print(e.stdout,flush=True)
