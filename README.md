@@ -40,8 +40,12 @@ Next phase: authenticated server routes and cookie sessions; owner-authorized, e
 
 ## Deployment to Vercel
 
-Import this repository into Vercel, choose Next.js, use `npm run build`, and deploy. No environment variables are needed for Phase 1. Use an HTTPS deployment for install/offline support. Icons are included at 192px and 512px. On iOS use Safari → Share → Add to Home Screen. Web push on iOS requires iOS 16.4+, a Home Screen installation, user permission and a backend push service; no unsupported background timers are offered. Reminders remain disabled and are not medical recommendations.
+Import `chaithanya28infra/feeding_tracker` into Vercel, choose Next.js, keep the root directory as `./`, and deploy. `vercel.json` pins the install and build commands. GitHub Actions runs tests, type checks, and a production build for pushes to main and pull requests. Git integration creates subsequent deployments from pushes. No environment variables are needed for Phase 1. Use an HTTPS deployment for install/offline support. Icons are included at 192px and 512px. On iOS use Safari → Share → Add to Home Screen. Web push on iOS requires iOS 16.4+, a Home Screen installation, user permission and a backend push service; no unsupported background timers are offered. Reminders remain disabled and are not medical recommendations.
 
 ## Validation limits
 
-Nine unit tests cover domain logic and IndexedDB persistence. Manual browser QA verified starting, switching sides, pausing, reload recovery with notes, saving a feeding, and the 390px mobile dashboard. Actual device installation, service-worker offline recovery, database authorization, and cloud synchronization still need integration tests. Phase 2 requires separate sync/authorization integration tests. Use production build in airplane mode after an initial online load to verify offline behavior on the target device.
+Twelve unit tests cover domain logic, IndexedDB persistence, and service-worker cache isolation. Manual browser QA verified starting, switching sides, pausing, reload recovery with notes, saving a feeding, and the 390px mobile dashboard. Actual device installation, service-worker offline recovery, database authorization, and cloud synchronization still need integration tests. Phase 2 requires separate sync/authorization integration tests. Use production build in airplane mode after an initial online load to verify offline behavior on the target device.
+
+## Phone acceptance testing
+
+Follow [the phone checklist](docs/PHONE_TESTING.md) on the HTTPS deployment. The custom domain is not configured yet. Localhost and each deployed hostname have separate browser storage; export logs before switching hosts.
