@@ -231,6 +231,7 @@ export function CloudAccount({
               <button className="primary" disabled={busy}>
                 {busy ? "Please wait…" : signup ? "Create account" : "Sign in"}
               </button>
+              {!signup && <a href="/reset-password">Forgot password?</a>}
             </div>
           </form>
         </>

@@ -15,7 +15,21 @@ These migrations target a fresh project; do not rerun migration 001 if it has al
 
 Enable Email authentication in Supabase Authentication → Providers. Under URL Configuration, use the deployment origin as Site URL and allow the development origin (`http://localhost:3000`) and exact deployment origins as Redirect URLs. The Settings account form offers email/password account creation and sign-in. If email confirmation is enabled, confirm the received link before signing in. Never share your password or secret/service-role key in chat.
 
-## Use
+## Password recovery
+
+The Settings sign-in form links to `/reset-password`. Signed-out parents can request a reset email; the email returns to this page where the authenticated recovery session allows a new password and confirmation. Invalid or expired links show a fresh email request form. Passwords must have 8–128 characters. A signed-in parent can also use this page to change their password.
+
+In Authentication → URL Configuration, allow these exact Redirect URLs in addition to the existing app origins:
+
+- `https://www.nestlittlebaby.com/reset-password`
+- `http://localhost:3000/reset-password`
+- Any additional deployment origin followed by `/reset-password` used for testing.
+
+Set Site URL to `https://www.nestlittlebaby.com`. Configure custom SMTP (for example Resend with a verified sending domain) for production email. Keep `{{ .ConfirmationURL }}` in the Reset Password email template and disable email-provider link tracking for auth links. SMTP credentials stay in Supabase; the app needs no Resend key.
+
+After deploying, test with your own account: request an email, open the link, enter matching new passwords, then sign out and sign in with the new password. Also check that a reused or expired email link offers a new reset request. Unit/build checks do not verify delivery or change a real account password.
+
+## Backups
 
 Set a real baby name and birth date in Settings. Sign in, choose a new cloud profile or an existing one, and press **Back up now**. Nothing uploads merely because you sign in. A backup includes saved care history and baby details; active timers remain device-local. Finish an active feed before backing up.
 

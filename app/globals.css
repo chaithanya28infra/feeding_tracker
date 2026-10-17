@@ -1683,6 +1683,21 @@ textarea:focus {
   }
 }
 
+.password-reset {
+  width: min(100%, 560px);
+  margin: 40px auto;
+  padding: 24px;
+}
+.password-reset section {
+  padding: 28px;
+  border-radius: 24px;
+  background: var(--card, #fff);
+}
+.password-reset label {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
 .cloud-account h2 {
   display: flex;
   align-items: center;
