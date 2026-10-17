@@ -7,6 +7,8 @@ import { SyncControls } from "@/components/automatic-sync";
 import { Caregivers } from "@/components/caregivers";
 import { validateBackup } from "@/lib/cloud-validation";
 import type { State } from "@/lib/model";
+import { loadSync } from "@/lib/storage";
+import { preferredCloudProfile } from "@/lib/cloud-profiles";
 type CloudBaby = {
   id: string;
   name: string;
@@ -32,6 +34,7 @@ export function CloudAccount({
     [message, setMessage] = useState(""),
     [error, setError] = useState(""),
     [babies, setBabies] = useState<CloudBaby[]>([]),
+    [profilesLoading, setProfilesLoading] = useState(false),
     [selected, setSelected] = useState("");
   useEffect(() => {
     const client = getSupabase();
@@ -74,21 +77,38 @@ export function CloudAccount({
   }
   async function refresh() {
     const result = await request("/api/cloud");
+    const binding = await loadSync();
     setBabies(result.babies);
+    setSelected((current) =>
+      result.babies.some((b: CloudBaby) => b.id === current)
+        ? current
+        : preferredCloudProfile(result.babies, session!.user.id, binding),
+    );
   }
   useEffect(() => {
     setBabies([]);
     setSelected("");
     setError("");
     let cancelled = false;
-    if (session?.user.id && !authOnly)
+    if (session?.user.id && !authOnly) {
+      setProfilesLoading(true);
       request("/api/cloud")
-        .then((result) => {
-          if (!cancelled) setBabies(result.babies);
+        .then(async (result) => {
+          const binding = await loadSync();
+          if (!cancelled) {
+            setBabies(result.babies);
+            setSelected(
+              preferredCloudProfile(result.babies, session.user.id, binding),
+            );
+          }
         })
         .catch((e) => {
           if (!cancelled) setError(e.message);
+        })
+        .finally(() => {
+          if (!cancelled) setProfilesLoading(false);
         });
+    } else setProfilesLoading(false);
     return () => {
       cancelled = true;
     };
@@ -274,9 +294,13 @@ export function CloudAccount({
             <select
               value={selected}
               onChange={(e) => setSelected(e.target.value)}
-              disabled={busy}
+              disabled={busy || profilesLoading}
             >
-              <option value="">Create a new cloud baby profile</option>
+              <option value="">
+                {profilesLoading
+                  ? "Loading cloud profiles…"
+                  : "Create a new cloud baby profile"}
+              </option>
               {babies.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name} · {b.date_of_birth}
@@ -285,6 +309,13 @@ export function CloudAccount({
               ))}
             </select>
           </label>
+          {!profilesLoading && babies.length === 0 && !error && (
+            <p className="cloud-message">
+              No cloud baby profile yet. Save your baby’s name and birth date
+              below, then choose <strong>Back up now</strong>. After that, you
+              can enable automatic sync.
+            </p>
+          )}
           <SyncControls
             userId={session.user.id}
             babyId={selected}
