@@ -31,7 +31,7 @@ After deploying, test with your own account: request an email, open the link, en
 
 ## Backups
 
-Set a real baby name and birth date in Settings. Sign in, choose a new cloud profile or an existing one, and press **Back up now**. Nothing uploads merely because you sign in. A backup includes saved care history and baby details; active timers remain device-local. Finish an active feed before backing up.
+For an account with no cloud profiles, Settings shows a baby name and birth date form. **Create profile & enable sync** saves those details locally, creates the first cloud backup, and enables revisioned automatic sync. If sync fails after backup, the created profile stays selected so it can be retried without creating another baby. For existing profiles, select the baby and use **Back up now** for a manual backup. Nothing uploads merely because you sign in; the setup action explicitly opts in to backup and sync. A backup includes saved care history and baby details; active timers remain device-local. Finish an active feed before backing up.
 
 On another device, sign in to the same account, select the baby and choose **Restore / merge**. Review the confirmation. Local event IDs win over the same IDs in a backup; existing local entries are retained, and baby details come from the backup. Export important local data first if you want a separate copy. Signing out leaves device logs in place. Restore imports data into the account's single local baby profile: do not merge different babies' histories.
 

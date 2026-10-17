@@ -7,7 +7,8 @@ import { SyncControls } from "@/components/automatic-sync";
 import { Caregivers } from "@/components/caregivers";
 import { validateBackup } from "@/lib/cloud-validation";
 import type { State } from "@/lib/model";
-import { loadSync } from "@/lib/storage";
+import { loadSync, loadState, connectSync } from "@/lib/storage";
+import { setupCloudProfile } from "@/lib/cloud-setup";
 import { preferredCloudProfile } from "@/lib/cloud-profiles";
 type CloudBaby = {
   id: string;
@@ -65,6 +66,7 @@ export function CloudAccount({
     const response = await fetch(path, {
       method: body ? "POST" : "GET",
       cache: "no-store",
+      signal: AbortSignal.timeout(20000),
       headers: {
         Authorization: `Bearer ${data.session.access_token}`,
         ...(body ? { "Content-Type": "application/json" } : {}),
@@ -309,11 +311,93 @@ export function CloudAccount({
               ))}
             </select>
           </label>
-          {!profilesLoading && babies.length === 0 && !error && (
-            <p className="cloud-message">
-              No cloud baby profile yet. Save your baby’s name and birth date
-              below, then choose <strong>Back up now</strong>. After that, you
-              can enable automatic sync.
+          {!profilesLoading && babies.length === 0 && !autoActive && (
+            <form
+              className="cloud-setup"
+              key={JSON.stringify(state.baby)}
+              onSubmit={(e) => {
+                e.preventDefault();
+                const values = new FormData(e.currentTarget);
+                void perform(async () => {
+                  const baby = {
+                    ...state.baby,
+                    name: String(values.get("cloud-name")).trim(),
+                    dob: String(values.get("cloud-dob")),
+                  };
+                  const local = await loadState();
+                  await setupCloudProfile(local, baby, {
+                    saveDetails: onMerge,
+                    request,
+                    created: (babyId) => {
+                      setBabies([
+                        {
+                          id: babyId,
+                          name: baby.name,
+                          date_of_birth: baby.dob,
+                          timezone: baby.timezone,
+                          owner_id: session.user.id,
+                        },
+                      ]);
+                      setSelected(babyId);
+                      setMessage(
+                        "Cloud profile created and care logs backed up.",
+                      );
+                    },
+                    connect: (babyId, value, revision) =>
+                      connectSync(session.user.id, babyId, value, revision),
+                  });
+                  setMessage(
+                    "Your baby’s cloud profile is ready. Automatic sync is enabled.",
+                  );
+                });
+              }}
+            >
+              <h3>Set up your baby’s cloud profile</h3>
+              <p>
+                Save your baby’s details and care logs to your account, then
+                keep future entries in sync automatically.
+              </p>
+              <div className="form-grid">
+                <label>
+                  Baby’s name
+                  <input
+                    name="cloud-name"
+                    defaultValue={state.baby.name}
+                    required
+                    maxLength={80}
+                    disabled={busy}
+                  />
+                </label>
+                <label>
+                  Date of birth
+                  <input
+                    name="cloud-dob"
+                    type="date"
+                    defaultValue={state.baby.dob}
+                    required
+                    max={new Date().toISOString().slice(0, 10)}
+                    disabled={busy}
+                  />
+                </label>
+              </div>
+              <button className="primary" disabled={busy || !!state.timer}>
+                {busy ? "Setting up…" : "Create profile & enable sync"}
+              </button>
+              {state.timer && (
+                <p className="validation">
+                  Save your active feeding before setting up sync.
+                </p>
+              )}
+            </form>
+          )}
+          {error && (
+            <p role="alert" className="validation">
+              {error}
+            </p>
+          )}
+          {message && (
+            <p role="status" className="cloud-message">
+              {message}
             </p>
           )}
           <SyncControls
@@ -428,12 +512,12 @@ export function CloudAccount({
           }}
         />
       )}
-      {error && (
+      {authOnly && error && (
         <p role="alert" className="validation">
           {error}
         </p>
       )}
-      {message && (
+      {authOnly && message && (
         <p role="status" className="cloud-message">
           {message}
         </p>
