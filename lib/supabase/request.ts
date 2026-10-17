@@ -20,6 +20,7 @@ export async function accountRequest(
   const response = await fetch(path, {
     method,
     cache: "no-store",
+    signal: AbortSignal.timeout(20000),
     headers: {
       Authorization: `Bearer ${data.session.access_token}`,
       ...(body ? { "Content-Type": "application/json" } : {}),

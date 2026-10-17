@@ -17,7 +17,7 @@ npm run build # uses Webpack for portable compilation
 npm start
 ```
 
-Open http://localhost:3000 and sign in or create an account. Configure the baby's name, birth date, and timezone in Settings. No sample care data is inserted. Production service worker requires HTTPS or localhost; it is intentionally disabled in development.
+Open http://localhost:3000 and sign in or create an account. Add your baby with a name and birth date; saving is set up automatically. Returning families open their existing baby. Edit details and timezone in Settings. No sample care data is inserted. Production service worker requires HTTPS or localhost; it is intentionally disabled in development.
 
 ## Implemented Phase 1
 
@@ -44,7 +44,7 @@ Import `chaithanya28infra/feeding_tracker` into Vercel, choose Next.js, keep the
 
 ## Validation limits
 
-Thirty-two tests cover domain logic, IndexedDB persistence, service-worker cache isolation, backup validation/merge, API authentication rejection, offline sync queues, account boundaries and conflict/retry behavior. Live multi-user RLS tests remain required after migration. Manual browser QA verified starting, switching sides, pausing, reload recovery with notes, saving a feeding, and the 390px mobile dashboard. Actual device installation, service-worker offline recovery, database authorization, and cloud synchronization still need integration tests. Phase 2 requires separate sync/authorization integration tests. Use production build in airplane mode after an initial online load to verify offline behavior on the target device.
+Automated tests cover domain logic, IndexedDB persistence, service-worker cache isolation, backup validation/merge, API authentication rejection, offline sync queues, account boundaries and conflict/retry behavior. Live multi-user RLS tests remain required after migration. Manual browser QA verified starting, switching sides, pausing, reload recovery with notes, saving a feeding, and the 390px mobile dashboard. Actual device installation, service-worker offline recovery, database authorization, and cloud synchronization still need integration tests. Phase 2 requires separate sync/authorization integration tests. Use production build in airplane mode after an initial online load to verify offline behavior on the target device.
 
 ## Phone acceptance testing
 

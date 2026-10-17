@@ -8,9 +8,10 @@ import { validateBackup } from "@/lib/cloud-validation";
 import { syncOnce } from "@/lib/sync-engine";
 import { syncTransport } from "@/lib/supabase/request";
 export function AutomaticSyncStatus() {
-  const [label, setLabel] = useState("Saved on device"),
+  const [label, setLabel] = useState("On this device"),
     [error, setError] = useState("");
   const busy = useRef(false);
+  const enabled = useRef(false);
   useEffect(() => {
     let alive = true;
     const client = getSupabase();
@@ -20,14 +21,13 @@ export function AutomaticSyncStatus() {
       try {
         const b = await loadSync();
         if (!alive) return;
+        enabled.current = !!b?.enabled;
         if (!b?.enabled) {
-          setLabel(
-            b?.pending ? "Sync paused · changes on device" : "Saved on device",
-          );
+          setLabel(b?.pending ? "Saving paused" : "On this device");
           return;
         }
         if (!navigator.onLine) {
-          setLabel("Offline · changes on device");
+          setLabel("Offline · saved on device");
           return;
         }
         if (!client) {
@@ -39,15 +39,15 @@ export function AutomaticSyncStatus() {
           setLabel("Sign in to sync");
           return;
         }
-        setLabel("Syncing…");
+        setLabel("Saving…");
         const result = await syncOnce(syncTransport());
         if (alive) {
           setError("");
           setLabel(
             result === "synced"
-              ? "Synced"
+              ? "Saved"
               : result === "conflict"
-                ? "Sync needs review"
+                ? "Needs attention"
                 : result === "signed-out"
                   ? "Sign in to sync"
                   : "Sync paused",
@@ -56,7 +56,7 @@ export function AutomaticSyncStatus() {
       } catch (e) {
         if (alive) {
           setError(e instanceof Error ? e.message : "Sync could not connect.");
-          setLabel("Sync pending");
+          setLabel("Needs attention");
         }
       } finally {
         busy.current = false;
@@ -76,6 +76,8 @@ export function AutomaticSyncStatus() {
     document.addEventListener("visibilitychange", onVisible);
     let debounce: ReturnType<typeof setTimeout>;
     const onData = () => {
+      if (enabled.current)
+        setLabel(navigator.onLine ? "Saving…" : "Offline · saved on device");
       clearTimeout(debounce);
       debounce = setTimeout(trigger, 1500);
     };
@@ -92,10 +94,23 @@ export function AutomaticSyncStatus() {
     };
   }, []);
   return (
-    <span className="sync-status" title={error || label} aria-live="polite">
-      {label === "Synced" ? <Cloud size={15} /> : <CloudOff size={15} />}
+    <button
+      type="button"
+      className="sync-status"
+      title={error || label}
+      aria-live="polite"
+      aria-label={`${label}. Open saving settings`}
+      onClick={() => window.dispatchEvent(new Event("nest-open-settings"))}
+    >
+      {label === "Saved" ? (
+        <Cloud size={15} />
+      ) : label === "Saving…" ? (
+        <RefreshCw size={15} />
+      ) : (
+        <CloudOff size={15} />
+      )}
       <span>{label}</span>
-    </span>
+    </button>
   );
 }
 export function SyncControls({

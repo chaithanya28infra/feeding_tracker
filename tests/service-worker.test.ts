@@ -19,6 +19,7 @@ function worker() {
       "nestlittlebaby-v4",
       "nestlittlebaby-v5",
       "nestlittlebaby-v6",
+      "nestlittlebaby-v7",
       "other-app-cache",
     ],
     delete: async (key: string) => {
@@ -45,7 +46,11 @@ test("service worker upgrades remove only old app-owned caches", async () => {
     },
   });
   await completion!;
-  assert.deepEqual(w.removed, ["nestlittlebaby-v4", "nestlittlebaby-v5"]);
+  assert.deepEqual(w.removed, [
+    "nestlittlebaby-v4",
+    "nestlittlebaby-v5",
+    "nestlittlebaby-v6",
+  ]);
 });
 test("service worker never intercepts API requests, other origins, or writes", () => {
   const w = worker();

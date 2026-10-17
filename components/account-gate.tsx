@@ -11,6 +11,7 @@ import {
 } from "@/lib/storage";
 import { initialState } from "@/lib/model";
 import { CloudAccount } from "@/components/cloud-account";
+import { FamilySetup } from "@/components/family-setup";
 
 export function AccountGate({
   children,
@@ -98,7 +99,12 @@ export function AccountGate({
     }
   }
 
-  if (userId && readyUser === userId) return children(userId);
+  if (userId && readyUser === userId)
+    return (
+      <FamilySetup key={userId} userId={userId}>
+        {children(userId)}
+      </FamilySetup>
+    );
   return (
     <main className="welcome-page">
       <section className="welcome-story">

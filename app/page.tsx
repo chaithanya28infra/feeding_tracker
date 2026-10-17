@@ -54,7 +54,7 @@ import {
 } from "@/lib/model";
 import { loadState, saveState, getStorageUser } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
-import { CloudAccount } from "@/components/cloud-account";
+import { FamilySettings } from "@/components/family-settings";
 import { AutomaticSyncStatus } from "@/components/automatic-sync";
 import { mergeBackup } from "@/lib/cloud-validation";
 import { AccountGate } from "@/components/account-gate";
@@ -92,6 +92,11 @@ function Tracker({ userId }: { userId: string }) {
   const current = useRef(state),
     channel = useRef<BroadcastChannel | null>(null),
     readyRef = useRef(false);
+  useEffect(() => {
+    const openSettings = () => setTab("Settings");
+    window.addEventListener("nest-open-settings", openSettings);
+    return () => window.removeEventListener("nest-open-settings", openSettings);
+  }, []);
   useEffect(() => {
     if (new URLSearchParams(location.hash.slice(1)).has("caregiver-invite"))
       setTab("Settings");
@@ -1045,7 +1050,8 @@ function Tracker({ userId }: { userId: string }) {
           )}
           {tab === "Settings" && (
             <section className="card settings-card">
-              <CloudAccount
+              <FamilySettings
+                userId={userId}
                 state={state}
                 onMerge={async (backup) => {
                   await locked(async () => {
@@ -1148,25 +1154,21 @@ function Tracker({ userId }: { userId: string }) {
                 View care insights
               </button>
               <hr />
-              <h3>Your data, in your hands</h3>
-              <p>
-                Care logs are saved on this device. Use your account above for
-                manual cloud backups, or export a file before clearing browser
-                data. Invite a caregiver from the account section above to share
-                this baby’s synced history.
-              </p>
-              <button className="secondary" onClick={exportData}>
-                <Download size={17} />
-                Export baby data
-              </button>
+              <details className="family-disclosure">
+                <summary>Export your care history</summary>
+                <p>
+                  Download a copy of this baby’s care history for your records.
+                </p>
+                <button className="secondary" onClick={exportData}>
+                  <Download size={17} />
+                  Export baby data
+                </button>
+              </details>
               <hr />
-              <h3>Reminders & installation</h3>
+              <h3>Keep your little nest close</h3>
               <p>
-                Reminders are off. This version does not send background
-                reminders. On iPhone, add Nest Little Baby to your Home Screen
-                using Safari’s Share menu. iOS web push requires a Home Screen
-                installation on iOS 16.4 or later and explicit permission; it
-                requires a push service, planned for a later phase.
+                On iPhone, open this app in Safari, tap Share, then Add to Home
+                Screen.
               </p>
             </section>
           )}

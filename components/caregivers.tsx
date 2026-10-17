@@ -369,7 +369,7 @@ export function Caregivers({
       )}
       {userId && !babyId && (
         <p className="muted">
-          Select a cloud baby profile above to see its care team or create an
+          Finish your baby’s account setup to see their care team or create an
           invitation.
         </p>
       )}

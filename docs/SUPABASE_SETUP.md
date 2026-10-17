@@ -31,7 +31,11 @@ After deploying, test with your own account: request an email, open the link, en
 
 ## Backups
 
-For an account with no cloud profiles, Settings shows a baby name and birth date form. **Create profile & enable sync** saves those details locally, creates the first cloud backup, and enables revisioned automatic sync. If sync fails after backup, the created profile stays selected so it can be retried without creating another baby. For existing profiles, select the baby and use **Back up now** for a manual backup. Nothing uploads merely because you sign in; the setup action explicitly opts in to backup and sync. A backup includes saved care history and baby details; active timers remain device-local. Finish an active feed before backing up.
+After sign-in, a new account sees **Add your baby** with name and birth date. This saves baby details locally, creates the first cloud backup, and enables automatic saving. A fresh device with one accessible saved baby opens that baby automatically; multiple babies require an explicit choice. A device with existing logs requires a compatible baby before combining histories. Existing connected accounts keep their timers, queue, and any paused-saving preference.
+
+Settings shows the family account, baby details, and **Invite a caregiver**. Manual snapshot controls, pause/resume and conflict recovery are under **Advanced: backup & recovery**. The header reports Saved, Saving, Offline, or Needs attention and opens Settings when pressed. No cloud success is claimed when setup fails. Error details retain the server stage/code. Existing device logs can still be opened if account setup is temporarily unavailable.
+
+The app still uses revisioned snapshots and account-separated IndexedDB; this interface change does not migrate or delete care data. Manual backups are owner-only, and cloud access remains subject to Supabase RLS.
 
 On another device, sign in to the same account, select the baby and choose **Restore / merge**. Review the confirmation. Local event IDs win over the same IDs in a backup; existing local entries are retained, and baby details come from the backup. Export important local data first if you want a separate copy. Signing out leaves device logs in place. Restore imports data into the account's single local baby profile: do not merge different babies' histories.
 

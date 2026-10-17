@@ -1689,6 +1689,71 @@ textarea:focus {
   }
 }
 
+.family-setup {
+  max-width: 520px;
+  margin: 48px auto;
+  padding: 28px;
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  background: var(--paper);
+}
+.family-setup h1 {
+  font-size: clamp(30px, 5vw, 40px);
+  line-height: 1.2;
+  margin: 18px 0;
+}
+.family-setup p {
+  line-height: 1.6;
+}
+.family-setup form {
+  margin-top: 24px;
+}
+.family-setup .primary {
+  width: 100%;
+  min-height: 50px;
+}
+.family-setup .text-button {
+  margin: 12px 8px 0 0;
+}
+.family-choices {
+  display: grid;
+  gap: 12px;
+  margin: 24px 0;
+}
+.family-error {
+  padding: 16px;
+  margin: 20px 0;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.family-error details {
+  margin-bottom: 16px;
+}
+.family-disclosure {
+  border-top: 1px solid var(--border);
+  padding: 18px 0;
+}
+.family-disclosure > summary {
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 600;
+  padding: 8px 0;
+}
+.family-disclosure > .cloud-account,
+.family-disclosure > .caregiver-panel {
+  margin-top: 20px;
+}
+.family-settings .card-heading p {
+  margin: 5px 0 18px;
+}
+@media (max-width: 600px) {
+  .family-setup {
+    margin: 16px;
+    padding: 24px;
+  }
+}
 .password-reset {
   width: min(100%, 560px);
   margin: 40px auto;
@@ -1816,6 +1881,8 @@ textarea:focus {
 }
 
 .sync-status {
+  background: transparent;
+  padding: 6px;
   display: inline-flex;
   align-items: center;
   gap: 7px;

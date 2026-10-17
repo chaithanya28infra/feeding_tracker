@@ -50,6 +50,10 @@ test("account storage preserves legacy logs, separates accounts, and blocks sign
   lockStorage();
   await activateAccount("parent-b");
   assert.equal(await loadSync(), null, "sync queues are also account-specific");
+  await assert.rejects(
+    () => connectSync("parent-a", "baby-a", remote, 1),
+    /account changed/,
+  );
   assert.equal((await loadState()).events.length, 0);
   const other = structuredClone(initialState);
   other.events = [

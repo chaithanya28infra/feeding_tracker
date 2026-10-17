@@ -127,6 +127,8 @@ async function connectSyncUnlocked(
   remote: SyncSnapshot,
   revision: number,
 ) {
+  if (storageUser !== undefined && storageUser !== userId)
+    throw Error("Your account changed. Please sign in again.");
   const d = await db(),
     tx = d.transaction("state", "readwrite");
   const old = (await tx.store.get("sync")) as SyncBinding | undefined;
