@@ -54,6 +54,9 @@ import {
 } from "@/lib/model";
 import { loadState, saveState } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
+import { CloudAccount } from "@/components/cloud-account";
+import { AutomaticSyncStatus } from "@/components/automatic-sync";
+import { mergeBackup } from "@/lib/cloud-validation";
 type Tab = "Home" | "Feeding" | "Diapers" | "History" | "Settings" | "Insights";
 const nav = [
   { name: "Home", icon: Home },
@@ -69,6 +72,7 @@ export default function App() {
     [now, setNow] = useState(Date.now()),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
+    [lastLogged, setLastLogged] = useState<Diaper | null>(null),
     [filter, setFilter] = useState("all"),
     [date, setDate] = useState(""),
     [editing, setEditing] = useState<CareEvent | null>(null),
@@ -81,6 +85,8 @@ export default function App() {
     channel = useRef<BroadcastChannel | null>(null),
     readyRef = useRef(false);
   useEffect(() => {
+    if (new URLSearchParams(location.hash.slice(1)).has("caregiver-invite"))
+      setTab("Settings");
     loadState()
       .then((s) => {
         current.current = s;
@@ -127,6 +133,23 @@ export default function App() {
       channel.current?.close();
       window.removeEventListener("online", on);
       window.removeEventListener("offline", on);
+    };
+  }, []);
+  useEffect(() => {
+    let alive = true;
+    const refresh = () => {
+      loadState().then((s) => {
+        if (alive) {
+          current.current = s;
+          setState(s);
+          channel.current?.postMessage(s);
+        }
+      });
+    };
+    window.addEventListener("littlenest-data", refresh);
+    return () => {
+      alive = false;
+      window.removeEventListener("littlenest-data", refresh);
     };
   }, []);
   async function update(fn: (s: State) => State) {
@@ -207,7 +230,7 @@ export default function App() {
       }));
       setSelected(t.side === "left" ? "right" : "left");
       setNotes("");
-      setNotice("Feeding saved. A little moment, beautifully kept.");
+      setNotice("Feeding saved on this device.");
       setTab("Home");
     });
   }
@@ -222,14 +245,17 @@ export default function App() {
     await locked(async () =>
       update((s) => ({ ...s, events: mergeById(s.events, event) })),
     );
-    setEditing(event);
-    setNotice("Diaper logged. You can adjust the details below.");
+    if (current.current.events.some((e) => e.id === event.id)) {
+      setLastLogged(event);
+      setNotice("");
+    }
   }
   async function remove(id: string) {
     await locked(async () =>
       update((s) => ({ ...s, events: s.events.filter((e) => e.id !== id) })),
     );
     setEditing(null);
+    setLastLogged(null);
     setNotice("Entry removed.");
   }
   const tz = state.baby.timezone,
@@ -322,6 +348,9 @@ export default function App() {
                     : e.notes || "A fresh start, all comfortable"}
                   {e.kind === "feed" && e.notes ? ` · ${e.notes}` : ""}
                 </small>
+                {e.updatedByName && (
+                  <small>Last saved by {e.updatedByName}</small>
+                )}
               </span>
               <span className="activity-time">
                 {time(e.start)}
@@ -427,14 +456,13 @@ export default function App() {
             </span>
           </span>
           <div>
-            <span className="status">
-              <span />
-              {online ? "Local mode" : "Offline · local mode"}
-            </span>
+            <AutomaticSyncStatus />
             <button
               aria-label="Toggle nighttime mode"
               className="icon-button"
-              onClick={() => update((s) => ({ ...s, dark: !s.dark }))}
+              onClick={() =>
+                locked(async () => update((s) => ({ ...s, dark: !s.dark })))
+              }
             >
               {state.dark ? <Sun size={19} /> : <Moon size={19} />}
             </button>
@@ -464,15 +492,15 @@ export default function App() {
                     Little moments. <em>Lots of love.</em>
                   </>
                 ) : tab === "Feeding" ? (
-                  "A moment to nourish."
+                  "Feeding timer"
                 ) : tab === "Diapers" ? (
-                  "Fresh, happy, comfortable."
+                  "Log a diaper change"
                 ) : tab === "History" ? (
-                  "Your little care story."
+                  "Care history"
                 ) : tab === "Insights" ? (
                   "A rhythm of your own."
                 ) : (
-                  "Make yourself at home."
+                  "Baby & app settings"
                 )}
               </h1>
               <p>
@@ -514,21 +542,70 @@ export default function App() {
               </button>
             </div>
           )}
+          {timer && tab !== "Feeding" && (
+            <button
+              className="active-feed-banner"
+              onClick={() => setTab("Feeding")}
+            >
+              <span className="active-feed-dot" />
+              <span>
+                <strong>
+                  {timer.paused ? "Feeding paused" : "Feeding in progress"}
+                </strong>
+                <small>
+                  {clock(live.left + live.right)} · {timer.side} side · Tap to
+                  return
+                </small>
+              </span>
+              <ChevronRight size={20} />
+            </button>
+          )}
+          {lastLogged && state.events.some((e) => e.id === lastLogged.id) && (
+            <div className="diaper-confirmation" role="status">
+              <span>
+                <Check size={18} />
+                {lastLogged.type === "both"
+                  ? "Wet & dirty"
+                  : lastLogged.type === "wet"
+                    ? "Wet"
+                    : "Dirty"}{" "}
+                diaper saved at {time(lastLogged.start)}
+              </span>
+              <div>
+                <button
+                  onClick={() => {
+                    setEditing(lastLogged);
+                    setLastLogged(null);
+                  }}
+                >
+                  Add details
+                </button>
+                <button onClick={() => remove(lastLogged.id)}>Undo</button>
+                <button
+                  aria-label="Dismiss diaper confirmation"
+                  onClick={() => setLastLogged(null)}
+                >
+                  <X size={17} />
+                </button>
+              </div>
+            </div>
+          )}
           {tab === "Home" && (
             <>
               <section className="hero">
                 <div className="hero-copy">
                   <span className="tag">
-                    <span /> THE LITTLE THINGS ADD UP
+                    <span /> YOUR EVERYDAY CARE COMPANION
                   </span>
                   <h2>
-                    A new day.
-                    <br />A little more <em>growing.</em>
+                    A little less to remember.
+                    <br />
+                    <em>More time together.</em>
                   </h2>
                   <p>
-                    Feeds, fresh diapers, and all the in-between.
+                    Start a feed or record a diaper change.
                     <br />
-                    We’re here to help you find your rhythm.
+                    Your daily totals update automatically.
                   </p>
                   <Button
                     disabled={!ready}
@@ -538,6 +615,14 @@ export default function App() {
                     {timer ? "Return to active feed" : "Start a feeding"}
                     <ArrowUpRight size={17} />
                   </Button>
+                  <button
+                    className="secondary home-diaper-action"
+                    onClick={() => setTab("Diapers")}
+                    disabled={!ready}
+                  >
+                    <Droplets size={18} />
+                    Log a diaper
+                  </button>
                 </div>
                 <div className="hero-art" aria-hidden="true">
                   <div className="art-sun" />
@@ -625,7 +710,7 @@ export default function App() {
               <div className="dashboard-grid">
                 <section className="card recent">
                   <div className="card-heading">
-                    <h2>Little moments, lately</h2>
+                    <h2>Recent activity</h2>
                     <button
                       className="text-button"
                       onClick={() => setTab("History")}
@@ -637,7 +722,7 @@ export default function App() {
                 </section>
                 <section className="card quick">
                   <div className="card-heading">
-                    <h2>A little check-in</h2>
+                    <h2>Last feed & diaper</h2>
                     <Leaf size={18} />
                   </div>
                   <div className="last-feed">
@@ -703,9 +788,9 @@ export default function App() {
                 <h2>
                   {timer
                     ? timer.paused
-                      ? "A peaceful pause."
-                      : "Just you and your little one."
-                    : "Let’s settle in."}
+                      ? "Feeding paused"
+                      : `Nursing on the ${timer.side}`
+                    : "Choose a side to begin"}
                 </h2>
                 <div
                   className={`timer ${timer && !timer.paused ? "running" : ""}`}
@@ -728,6 +813,7 @@ export default function App() {
                         timer ? timerAction(side) : setSelected(side)
                       }
                       disabled={!ready}
+                      aria-pressed={(timer?.side ?? selected) === side}
                     >
                       <span>{side === "left" ? "L" : "R"}</span>
                       <strong>
@@ -737,27 +823,6 @@ export default function App() {
                     </button>
                   ))}
                 </div>
-                <label className="notes-label">
-                  A little note (optional)
-                  <textarea
-                    value={notes}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setNotes(value);
-                      if (timer)
-                        locked(async () =>
-                          update((s) => ({
-                            ...s,
-                            timer: s.timer
-                              ? { ...s.timer, notes: value }
-                              : null,
-                          })),
-                        );
-                    }}
-                    maxLength={1000}
-                    placeholder="Anything you’d like to remember…"
-                  />
-                </label>
                 <div className="timer-controls">
                   {timer ? (
                     <>
@@ -790,6 +855,30 @@ export default function App() {
                     </button>
                   )}
                 </div>
+                <details className="feeding-notes">
+                  <summary>Add a note (optional)</summary>
+                  <label className="notes-label">
+                    A little note (optional)
+                    <textarea
+                      value={notes}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setNotes(value);
+                        if (timer)
+                          locked(async () =>
+                            update((s) => ({
+                              ...s,
+                              timer: s.timer
+                                ? { ...s.timer, notes: value }
+                                : null,
+                            })),
+                          );
+                      }}
+                      maxLength={1000}
+                      placeholder="Anything you’d like to remember…"
+                    />
+                  </label>
+                </details>
               </section>
               <aside className="card tip-card">
                 <span className="stat-icon sage">
@@ -939,21 +1028,37 @@ export default function App() {
           )}
           {tab === "Settings" && (
             <section className="card settings-card">
+              <CloudAccount
+                state={state}
+                onMerge={async (backup) => {
+                  await locked(async () => {
+                    const next = mergeBackup(current.current, backup);
+                    await saveState(next);
+                    current.current = next;
+                    setState(next);
+                    channel.current?.postMessage(next);
+                  });
+                }}
+              />
+
               <h2>Your little one</h2>
               <form
+                key={JSON.stringify(state.baby)}
                 onSubmit={async (e) => {
                   e.preventDefault();
                   const data = new FormData(e.currentTarget);
-                  await update((s) => ({
-                    ...s,
-                    baby: {
-                      name: String(data.get("name")).trim(),
-                      dob: String(data.get("dob")),
-                      timezone: String(data.get("timezone")),
-                      weight: String(data.get("weight")),
-                      preferences: String(data.get("preferences")),
-                    },
-                  }));
+                  await locked(async () =>
+                    update((s) => ({
+                      ...s,
+                      baby: {
+                        name: String(data.get("name")).trim(),
+                        dob: String(data.get("dob")),
+                        timezone: String(data.get("timezone")),
+                        weight: String(data.get("weight")),
+                        preferences: String(data.get("preferences")),
+                      },
+                    })),
+                  );
                   setNotice("Baby profile saved.");
                 }}
               >
@@ -1012,7 +1117,9 @@ export default function App() {
               <h3>A peaceful nighttime view</h3>
               <button
                 className="secondary"
-                onClick={() => update((s) => ({ ...s, dark: !s.dark }))}
+                onClick={() =>
+                  locked(async () => update((s) => ({ ...s, dark: !s.dark })))
+                }
               >
                 <Moon size={17} />
                 {state.dark ? "Use light mode" : "Use nighttime mode"}
@@ -1026,9 +1133,10 @@ export default function App() {
               <hr />
               <h3>Your data, in your hands</h3>
               <p>
-                Phase 1 keeps care logs in this browser’s IndexedDB. Export a
-                backup before clearing browser data. Account sign-in,
-                invitations, and shared sync are planned for Phase 2.
+                Care logs are saved on this device. Use your account above for
+                manual cloud backups, or export a file before clearing browser
+                data. Invite a caregiver from the account section above to share
+                this baby’s synced history.
               </p>
               <button className="secondary" onClick={exportData}>
                 <Download size={17} />

@@ -1,0 +1,33 @@
+# Connect Supabase
+
+The project URL and publishable/legacy anon key live in ignored `.env.local`. The app uses no service-role key. Restart development after changing environment values. For Vercel, add the same two public variables to the project environment settings and redeploy.
+
+## Database setup (one time)
+
+In Supabase SQL Editor, open a new query and run the contents of these files **in order**:
+
+1. `supabase/migrations/001_initial.sql` — normalized baby/caregiver/event schema and RLS.
+2. `supabase/migrations/002_cloud_backups.sql` — owner-only manual backup storage and RLS.
+
+These migrations target a fresh project; do not rerun migration 001 if it has already succeeded. No care records are seeded.
+
+## Authentication
+
+Enable Email authentication in Supabase Authentication → Providers. Under URL Configuration, use the deployment origin as Site URL and allow the development origin (`http://localhost:3000`) and exact deployment origins as Redirect URLs. The Settings account form offers email/password account creation and sign-in. If email confirmation is enabled, confirm the received link before signing in. Never share your password or secret/service-role key in chat.
+
+## Use
+
+Set a real baby name and birth date in Settings. Sign in, choose a new cloud profile or an existing one, and press **Back up now**. Nothing uploads merely because you sign in. A backup includes saved care history and baby details; active timers remain device-local. Finish an active feed before backing up.
+
+On another device, sign in to the same account, select the baby and choose **Restore / merge**. Review the confirmation. Local event IDs win over the same IDs in a backup; existing local entries are retained, and baby details come from the backup. Export important local data first if you want a separate copy. Signing out leaves device logs in place. Restore imports data into the app's single local baby profile: do not merge different babies' histories.
+
+Manual snapshots work after migrations 001 and 002. Migration 003 adds optional automatic same-account snapshot sync; see AUTOMATIC_SYNC.md. Migration 004 adds caregiver invitations; see CAREGIVERS.md. Shared active timers and normalized event-level realtime sync remain pending. The normalized event tables are foundations for the next milestone; backups use the separate baby_backups table.
+
+## Access checks before release
+
+- Signed-out API GET and POST must return 401 with no-store caching.
+- Create test accounts A and B yourself; each creates a test baby and backup.
+- A must not see B's baby or backup. Requests for B's baby ID with A's token must return no snapshot; writes must fail.
+- Before migration 004, caregivers cannot access owner backups. After 004, an accepted caregiver must access only the invited baby’s shared snapshot; test with caregiver_privacy_checks.sql.
+- In Supabase's policy explorer, confirm RLS is enabled on every app table and no anon role can read backups.
+- These live cross-account checks require the migrations and real test users and are not claimed complete by unit tests.

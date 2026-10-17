@@ -1547,3 +1547,271 @@ textarea:focus {
     max-width: 85%;
   }
 }
+
+.home-diaper-action {
+  margin-left: 10px;
+}
+.hero-copy {
+  max-width: 68%;
+}
+.hero h2 {
+  font-size: clamp(27px, 2.6vw, 37px);
+}
+.active-feed-banner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 17px 20px;
+  margin-bottom: 18px;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2px solid #8b9c77;
+  border-radius: 12px;
+  text-align: left;
+}
+.active-feed-banner strong {
+  display: block;
+  font-size: 16px;
+}
+.active-feed-banner small {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.active-feed-banner > svg {
+  margin-left: auto;
+}
+.active-feed-dot {
+  width: 10px;
+  height: 10px;
+  background: #718a61;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.diaper-confirmation {
+  background: var(--paper);
+  border: 1px solid #8b9c77;
+  border-radius: 10px;
+  padding: 14px 17px;
+  margin-bottom: 18px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  font-size: 14px;
+}
+.diaper-confirmation > span,
+.diaper-confirmation > div {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.diaper-confirmation button {
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 44px;
+  padding: 10px;
+  border-radius: 6px;
+}
+.feeding-notes {
+  text-align: left;
+  margin-top: 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+.feeding-notes summary {
+  cursor: pointer;
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--muted);
+  min-height: 44px;
+}
+.feeding-notes label {
+  margin-top: 12px;
+}
+.timer-controls button,
+.side-buttons button {
+  min-height: 52px;
+}
+@media (max-width: 800px) {
+  .hero-copy {
+    max-width: 100%;
+    padding-right: 22px;
+  }
+  .hero h2 {
+    max-width: 85%;
+    font-size: 29px;
+  }
+  .hero p {
+    max-width: 70%;
+  }
+  .hero .primary,
+  .home-diaper-action {
+    display: flex;
+    width: min(100%, 270px);
+    margin: 10px 0 0;
+  }
+  .hero-art {
+    top: 80px;
+    right: -40px;
+    opacity: 0.45;
+    pointer-events: none;
+  }
+  .hero {
+    min-height: 340px;
+  }
+  .hero-copy > button {
+    position: relative;
+    z-index: 3;
+  }
+  .timer-card .timer {
+    margin: 24px 0 10px;
+  }
+  .timer-controls {
+    position: sticky;
+    bottom: 75px;
+    background: var(--paper);
+    padding: 12px 0;
+    z-index: 5;
+  }
+  .timer-controls button {
+    flex: 1;
+  }
+}
+
+.cloud-account h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.cloud-account .card-heading {
+  align-items: flex-start;
+}
+.cloud-account .account-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0;
+}
+.cloud-account p {
+  overflow-wrap: anywhere;
+}
+.cloud-account input {
+  font-size: 16px;
+}
+.cloud-message {
+  color: var(--green);
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--bg);
+}
+
+.account-mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 12px;
+  margin: 22px 0;
+}
+.account-mode-switch button {
+  min-height: 50px;
+  padding: 12px;
+  background: transparent;
+  color: var(--ink);
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.account-mode-switch button[aria-pressed="true"] {
+  background: #44654e;
+  color: #fff;
+}
+
+.sync-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--muted);
+  max-width: 220px;
+}
+.sync-controls {
+  margin-top: 20px;
+}
+.sync-conflict {
+  margin: 18px 0;
+  padding: 18px;
+  border: 1px solid #b68f6a;
+  border-radius: 10px;
+}
+.sync-conflict h4 {
+  font-size: 16px;
+  margin: 0;
+}
+@media (max-width: 800px) {
+  .sync-status {
+    max-width: 105px;
+    font-size: 10px;
+  }
+  .topbar > div {
+    gap: 5px;
+  }
+}
+
+.caregiver-panel h3 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.caregiver-panel details {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin: 18px 0;
+}
+.caregiver-panel summary {
+  cursor: pointer;
+  font-size: 15px;
+  padding: 8px 0;
+}
+.caregiver-panel form {
+  margin: 22px 0;
+}
+.caregiver-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.caregiver-row strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.caregiver-row small {
+  display: block;
+  font-size: 12px;
+  margin-top: 5px;
+  color: var(--muted);
+}
+.caregiver-row > span {
+  min-width: 0;
+}
+.caregiver-row button {
+  min-height: 44px;
+}
+.generated-invite {
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 10px;
+  margin-top: 18px;
+}

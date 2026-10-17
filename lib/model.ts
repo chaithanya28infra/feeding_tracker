@@ -8,7 +8,13 @@ export type Timer = {
   paused: boolean;
   notes?: string;
 };
-export type Feed = {
+type CareAttribution = {
+  createdBy?: string;
+  createdByName?: string;
+  updatedBy?: string;
+  updatedByName?: string;
+};
+export type Feed = CareAttribution & {
   id: string;
   kind: "feed";
   start: number;
@@ -19,7 +25,7 @@ export type Feed = {
   notes: string;
   segments?: Segment[];
 };
-export type Diaper = {
+export type Diaper = CareAttribution & {
   id: string;
   kind: "diaper";
   start: number;
