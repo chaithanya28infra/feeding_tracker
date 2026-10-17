@@ -1,20 +1,19 @@
 import { authenticate } from "@/lib/supabase/server";
 import { validateBackup } from "@/lib/cloud-validation";
+import { CloudDatabaseError } from "@/lib/cloud-errors";
 export const dynamic = "force-dynamic";
 const headers = { "Cache-Control": "no-store" };
 function failure(error: unknown) {
   const message =
     error instanceof Error ? error.message : "Cloud request failed.";
   return Response.json(
-    { error: message === "UNAUTHORIZED" ? "Please sign in again." : message },
+    {
+      error: message === "UNAUTHORIZED" ? "Please sign in again." : message,
+      ...(error instanceof CloudDatabaseError
+        ? { code: error.code, step: error.step }
+        : {}),
+    },
     { status: message === "UNAUTHORIZED" ? 401 : 400, headers },
-  );
-}
-function dbError(code?: string) {
-  return new Error(
-    code === "42P01" || code === "PGRST205"
-      ? "Cloud tables are missing. Apply migrations 001 and 002 in the Supabase SQL Editor."
-      : "Cloud request failed. Check your connection and baby access, then retry.",
   );
 }
 export async function GET(request: Request) {
@@ -27,14 +26,14 @@ export async function GET(request: Request) {
         .select("*")
         .eq("baby_id", id)
         .maybeSingle();
-      if (error) throw dbError(error.code);
+      if (error) throw new CloudDatabaseError("load backup", error.code);
       return Response.json({ backup: data }, { headers });
     }
     const { data, error } = await db
       .from("babies")
       .select("id,name,date_of_birth,timezone,owner_id")
       .order("created_at");
-    if (error) throw dbError(error.code);
+    if (error) throw new CloudDatabaseError("load profiles", error.code);
     return Response.json({ babies: data }, { headers });
   } catch (error) {
     return failure(error);
@@ -56,7 +55,8 @@ export async function POST(request: Request) {
         .eq("id", babyId)
         .eq("owner_id", user.id)
         .maybeSingle();
-      if (error || !data) throw Error("You do not own that baby profile.");
+      if (error) throw new CloudDatabaseError("check ownership", error.code);
+      if (!data) throw Error("You do not own that baby profile.");
     } else {
       const { data, error } = await db
         .from("babies")
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
         })
         .select("id")
         .single();
-      if (error) throw dbError(error.code);
+      if (error) throw new CloudDatabaseError("create profile", error.code);
       babyId = data.id;
     }
     const { error } = await db.from("baby_backups").upsert(
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
       },
       { onConflict: "baby_id" },
     );
-    if (error) throw dbError(error.code);
+    if (error) throw new CloudDatabaseError("save backup", error.code);
     return Response.json({ babyId }, { headers });
   } catch (error) {
     return failure(error);
