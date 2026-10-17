@@ -12,6 +12,7 @@ import {
 import { initialState } from "@/lib/model";
 import { CloudAccount } from "@/components/cloud-account";
 import { FamilySetup } from "@/components/family-setup";
+import { Welcome } from "@/components/welcome";
 
 export function AccountGate({
   children,
@@ -106,87 +107,57 @@ export function AccountGate({
       </FamilySetup>
     );
   return (
-    <main className="welcome-page">
-      <section className="welcome-story">
-        <img
-          src="/brand/nest-mark.png"
-          width="160"
-          height="160"
-          alt="Nest Little Baby"
-        />
-        <p className="eyebrow">NEST LITTLE BABY</p>
-        <h1>
-          A little care,
-          <br />
-          beautifully kept.
-        </h1>
-        <p>
-          A calm place to keep track of feeds, diaper changes, and the little
-          moments you share.
-        </p>
-        <p className="muted">
-          Sign in to open your family’s tracker. Once signed in, you can keep
-          logging offline on this device.
-        </p>
-      </section>
-      <div className="welcome-account">
-        {!checked ? (
-          <p role="status">Checking your sign-in…</p>
-        ) : !session ? (
-          <CloudAccount
-            state={initialState}
-            onMerge={async () => {}}
-            authOnly
-          />
-        ) : needsImport ? (
-          <section aria-labelledby="import-title">
-            <h2 id="import-title">Keep your existing device logs?</h2>
-            <p>
-              This browser has care logs from before account storage was
-              introduced. Only import them if they belong to you.
-            </p>
-            <p>
-              Signed in as <strong>{session.user.email}</strong>.
-            </p>
-            <div className="account-actions">
-              <button
-                className="primary"
-                disabled={busy}
-                onClick={() => void choose(true)}
-              >
-                Import my existing logs
-              </button>
-              <button
-                className="secondary"
-                disabled={busy}
-                onClick={() => void choose(false)}
-              >
-                Start fresh for this account
-              </button>
-            </div>
-            <p className="muted">
-              Starting fresh keeps the original logs preserved separately on
-              this device.
-            </p>
-            <button
-              className="text-button"
-              disabled={busy}
-              onClick={() =>
-                void getSupabase()?.auth.signOut({ scope: "local" })
-              }
-            >
-              Use a different account
-            </button>
-          </section>
-        ) : (
-          <p role="status">Opening your tracker…</p>
-        )}
-        {error && (
-          <p role="alert" className="validation">
-            {error}
+    <Welcome>
+      {!checked ? (
+        <p role="status">Checking your sign-in…</p>
+      ) : !session ? (
+        <CloudAccount state={initialState} onMerge={async () => {}} authOnly />
+      ) : needsImport ? (
+        <section aria-labelledby="import-title">
+          <h2 id="import-title">Keep your existing device logs?</h2>
+          <p>
+            This browser has care logs from before account storage was
+            introduced. Only import them if they belong to you.
           </p>
-        )}
-      </div>
-    </main>
+          <p>
+            Signed in as <strong>{session.user.email}</strong>.
+          </p>
+          <div className="account-actions">
+            <button
+              className="primary"
+              disabled={busy}
+              onClick={() => void choose(true)}
+            >
+              Import my existing logs
+            </button>
+            <button
+              className="secondary"
+              disabled={busy}
+              onClick={() => void choose(false)}
+            >
+              Start fresh for this account
+            </button>
+          </div>
+          <p className="muted">
+            Starting fresh keeps the original logs preserved separately on this
+            device.
+          </p>
+          <button
+            className="text-button"
+            disabled={busy}
+            onClick={() => void getSupabase()?.auth.signOut({ scope: "local" })}
+          >
+            Use a different account
+          </button>
+        </section>
+      ) : (
+        <p role="status">Opening your tracker…</p>
+      )}
+      {error && (
+        <p role="alert" className="validation">
+          {error}
+        </p>
+      )}
+    </Welcome>
   );
 }

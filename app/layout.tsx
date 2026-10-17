@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./nest-theme.css";
 export const metadata: Metadata = {
   title: "Nest Little Baby · A little care, beautifully kept",
   description:

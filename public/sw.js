@@ -1,4 +1,4 @@
-const CACHE = "nestlittlebaby-v7";
+const CACHE = "nestlittlebaby-v8";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
