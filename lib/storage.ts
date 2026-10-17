@@ -8,12 +8,96 @@ import {
   type SyncSnapshot,
 } from "./sync-model";
 // Preserve the original database ID and state store during upgrades.
-const db = () =>
-  openDB("littlenest", 1, {
+let storageUser: string | null | undefined;
+export const getStorageUser = () => storageUser;
+export function lockStorage() {
+  storageUser = null;
+}
+const openStore = (name: string) =>
+  openDB(name, 1, {
     upgrade(db) {
       db.createObjectStore("state");
     },
   });
+const accountStore = (userId: string) =>
+  openStore(`littlenest-account-${userId}`);
+const db = () => {
+  if (storageUser === null) throw Error("Sign in to access care logs.");
+  return storageUser ? accountStore(storageUser) : openStore("littlenest");
+};
+
+// The original database remains intact for upgrades. Unlinked logs require an
+// explicit import; a sync binding or prior claim identifies their owning account.
+export async function activateAccount(
+  userId: string,
+  importLegacy = false,
+  isCurrent = () => true,
+) {
+  return withStateLock(async () => {
+    if (!isCurrent()) return false;
+    const target = await accountStore(userId);
+    if (!(await target.get("state", "account-initialized"))) {
+      const legacy = await openStore("littlenest");
+      const state = (await legacy.get("state", "current")) as State | undefined;
+      const binding = (await legacy.get("state", "sync")) as
+        SyncBinding | undefined;
+      const owner = (await legacy.get("state", "legacy-owner")) as
+        string | undefined;
+      const hasLogs =
+        !!state &&
+        (!!state.timer ||
+          !!state.baby.dob ||
+          !!state.events.length ||
+          state.baby.name !== initialState.baby.name);
+      const owned = (binding?.userId ?? owner) === userId;
+      const unclaimed = !binding && !owner && hasLogs;
+      if (unclaimed && !importLegacy) return false;
+      if (owned || (unclaimed && importLegacy)) {
+        await legacy.put("state", userId, "legacy-owner");
+        const tx = target.transaction("state", "readwrite");
+        if (state) await tx.store.put(state, "current");
+        if (binding) await tx.store.put(binding, "sync");
+        await tx.store.put(true, "account-initialized");
+        await tx.done;
+      } else {
+        await target.put("state", true, "account-initialized");
+      }
+    }
+    if (!isCurrent()) return false;
+    storageUser = userId;
+    return true;
+  });
+}
+export async function startFreshAccount(
+  userId: string,
+  isCurrent = () => true,
+) {
+  await withStateLock(async () => {
+    if (!isCurrent()) return;
+    const target = await accountStore(userId);
+    await target.put("state", true, "account-initialized");
+    if (isCurrent()) storageUser = userId;
+  });
+}
+export async function clearAccountData(userId: string) {
+  await withStateLock(async () => {
+    const target = await accountStore(userId);
+    const tx = target.transaction("state", "readwrite");
+    await tx.store.clear();
+    await tx.store.put(true, "account-initialized");
+    await tx.done;
+    // Also remove the upgrade copy if it belongs to this account.
+    const legacy = await openStore("littlenest");
+    const old = legacy.transaction("state", "readwrite");
+    const binding = (await old.store.get("sync")) as SyncBinding | undefined;
+    const owner = (await old.store.get("legacy-owner")) as string | undefined;
+    if ((binding?.userId ?? owner) === userId) {
+      await old.store.delete("current");
+      await old.store.delete("sync");
+    }
+    await old.done;
+  });
+}
 function changed() {
   if (typeof window !== "undefined")
     window.dispatchEvent(new Event("littlenest-data"));

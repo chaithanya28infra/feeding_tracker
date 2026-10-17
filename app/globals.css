@@ -1,5 +1,11 @@
 @import "tailwindcss";
 :root {
+  --paper: #fffefa;
+  --bg: #f6f5f0;
+  --ink: #303f36;
+  --muted: #858a80;
+  --border: #e7e8df;
+  --green: #43634f;
   font-family: Arial, Helvetica, sans-serif;
   color: #303f36;
   background: #f6f5f0;
@@ -1687,6 +1693,65 @@ textarea:focus {
   width: min(100%, 560px);
   margin: 40px auto;
   padding: 24px;
+}
+.welcome-page {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: center;
+  gap: clamp(24px, 6vw, 90px);
+  max-width: 1120px;
+  min-height: 100dvh;
+  margin: auto;
+  padding: 40px 24px;
+}
+.welcome-story h1 {
+  font-size: clamp(36px, 5vw, 60px);
+  line-height: 1.12;
+}
+.welcome-story > p {
+  max-width: 440px;
+  line-height: 1.7;
+}
+.welcome-story img {
+  object-fit: contain;
+}
+.welcome-account {
+  background: #fffdf8;
+  padding: clamp(22px, 4vw, 40px);
+  border: 1px solid #e3e8dd;
+  border-radius: 28px;
+}
+.welcome-account .form-grid {
+  grid-template-columns: 1fr;
+}
+.welcome-account hr {
+  display: none;
+}
+.signout-option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.signout-option input {
+  width: 20px;
+  min-height: 20px;
+}
+@media (max-width: 700px) {
+  .welcome-page {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 24px 16px;
+    gap: 24px;
+  }
+  .welcome-story img {
+    width: 100px;
+    height: 100px;
+  }
+  .welcome-story h1 {
+    margin-top: 10px;
+  }
 }
 .password-reset section {
   padding: 28px;

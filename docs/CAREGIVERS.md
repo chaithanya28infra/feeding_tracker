@@ -16,7 +16,7 @@ Run `supabase/migrations/004_caregiver_invites.sql` once after 001–003. Then r
 
 Open the invitation, or paste its link/code under Settings → Caregivers → Have an invitation? Sign in or create an account using the exact invited email and confirm it. Reopen the invitation after email confirmation if necessary. Accept it, select the shared baby, restore / merge its history, and enable automatic sync.
 
-Use your own device or an unlinked local profile. A browser already linked to another account/baby remains bound to it to avoid mixing histories; export its logs rather than attempting to reuse that browser for a different baby.
+Each account has separate local storage, so signing into a different account on the same browser opens that account’s logs. Within one account, a local profile linked to one baby remains bound to that baby to avoid mixing histories; export logs before changing babies.
 
 Set a display name (e.g. Mum, Dad, Alex) in Caregivers. Future synced entries show the server-recorded last editor. Existing historical entries without attribution are not retroactively assigned. The database stamps attribution from the signed-in user; the server returns the stamped snapshot to the sync engine.
 

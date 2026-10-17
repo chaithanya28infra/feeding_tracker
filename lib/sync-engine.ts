@@ -1,4 +1,10 @@
-import { loadState, loadSync, markConflict, commitSync } from "./storage";
+import {
+  loadState,
+  loadSync,
+  markConflict,
+  commitSync,
+  getStorageUser,
+} from "./storage";
 import { snapshot, reconcile, same, type SyncSnapshot } from "./sync-model";
 import { validateBackup } from "./cloud-validation";
 export type SyncTransport = {
@@ -16,7 +22,10 @@ export async function syncOnce(
 ) {
   const b = await loadSync();
   if (!b?.enabled) return "paused";
+  const sameAccount = () =>
+    getStorageUser() === undefined || getStorageUser() === b.userId;
   if ((await transport.userId()) !== b.userId) return "signed-out";
+  if (!sameAccount()) return "signed-out";
   if (b.conflict && !resolve) return "conflict";
   const state = await loadState(),
     observed = snapshot(state),
@@ -30,6 +39,8 @@ export async function syncOnce(
       dark: false,
     }),
   );
+  if (!sameAccount() || (await transport.userId()) !== b.userId)
+    return "signed-out";
   if (resolve && b.conflict && b.conflict.revision !== remote.revision) {
     const m = reconcile(b.base, observed, remoteState);
     await markConflict(
@@ -58,6 +69,7 @@ export async function syncOnce(
   let accepted = remoteState,
     revision = remote.revision;
   if (!same(m.value, remoteState)) {
+    if (!sameAccount()) return "signed-out";
     const result = await transport.write(b.babyId, m.value, remote.revision);
     accepted = snapshot(
       validateBackup({
@@ -69,6 +81,7 @@ export async function syncOnce(
     revision = result.revision;
   }
   if ((await transport.userId()) !== b.userId) return "signed-out";
+  if (!sameAccount()) return "signed-out";
   const committed = await commitSync(b, observed, accepted, revision);
   return committed ? "synced" : "conflict";
 }

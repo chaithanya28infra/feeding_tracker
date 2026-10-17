@@ -17,7 +17,7 @@ npm run build # uses Webpack for portable compilation
 npm start
 ```
 
-Open http://localhost:3000. Configure the baby's name, birth date, and timezone in Settings. No sample care data is inserted. Production service worker requires HTTPS or localhost; it is intentionally disabled in development.
+Open http://localhost:3000 and sign in or create an account. Configure the baby's name, birth date, and timezone in Settings. No sample care data is inserted. Production service worker requires HTTPS or localhost; it is intentionally disabled in development.
 
 ## Implemented Phase 1
 
@@ -26,11 +26,11 @@ Open http://localhost:3000. Configure the baby's name, birth date, and timezone 
 - Wet, dirty and both diaper logs with immediate save, edit, undo/delete, notes, color and consistency.
 - Dashboard totals, editable date-grouped history, date/type filters, manual feeding, 7/30-day charts and timezone-aware display.
 - Baby profile, nighttime theme, JSON export, install manifest, icons and production offline shell cache.
-- Care logs stay on this browser by default. Settings now offers Supabase email/password sign-in and explicit cloud backups and restore/merge. Optional automatic same-account sync is available after migration 003 and explicit device linking. Migration 004 adds email-bound caregiver invitations for a selected baby; background notification delivery is not enabled. Local data is not encrypted and can be lost if browser storage is cleared. Export backups regularly.
+- Care logs stay on this browser by default. Sign-in is required to open the tracker; each account has separate device storage. Settings offers explicit cloud backups and restore/merge. Optional automatic same-account sync is available after migration 003 and explicit device linking. Migration 004 adds email-bound caregiver invitations for a selected baby; background notification delivery is not enabled. Local data is not encrypted and can be lost if browser storage is cleared. Export backups regularly.
 
 ## Architecture
 
-`app/page.tsx` contains the responsive application and forms. `lib/model.ts` contains pure timer, date, and counting logic; `lib/storage.ts` persists one transactional app snapshot in IndexedDB. `tests/model.test.ts` covers timestamp recovery, switching, pause/resume, counts, duplicate IDs and DST boundaries. `tests/storage.test.ts` verifies IndexedDB timer/note recovery and offline local commits with fake-indexeddb. `public/sw.js` caches the production shell and same-origin assets after first visit. The timer's open segment records its original UTC start time, so elapsed time is reconstructed rather than accumulated by an interval. Intervals only refresh the display.
+`app/page.tsx` contains the responsive application and forms. `lib/model.ts` contains pure timer, date, and counting logic; `lib/storage.ts` persists one transactional snapshot and sync queue per account in IndexedDB. The original `littlenest` database is retained for migration; linked logs follow the matching account, and unlinked logs require explicit import. `tests/model.test.ts` covers timestamp recovery, switching, pause/resume, counts, duplicate IDs and DST boundaries. `tests/storage.test.ts` verifies IndexedDB timer/note recovery and offline local commits with fake-indexeddb. `public/sw.js` caches the production shell and same-origin assets after first visit. The timer's open segment records its original UTC start time, so elapsed time is reconstructed rather than accumulated by an interval. Intervals only refresh the display.
 
 ## Database / Phase 2
 
@@ -40,11 +40,11 @@ Implemented: bearer-authenticated server routes verify each token through Supaba
 
 ## Deployment to Vercel
 
-Import `chaithanya28infra/feeding_tracker` into Vercel, choose Next.js, keep the root directory as `./`, and deploy. `vercel.json` pins the install and build commands. GitHub Actions runs tests, type checks, and a production build for pushes to main and pull requests. Git integration creates subsequent deployments from pushes. Local-only tracking needs no environment variables. For account/backup features, set the two public Supabase variables in the Vercel environment and redeploy. Use an HTTPS deployment for install/offline support. Icons are included at 192px and 512px. On iOS use Safari → Share → Add to Home Screen. Web push on iOS requires iOS 16.4+, a Home Screen installation, user permission and a backend push service; no unsupported background timers are offered. Reminders remain disabled and are not medical recommendations.
+Import `chaithanya28infra/feeding_tracker` into Vercel, choose Next.js, keep the root directory as `./`, and deploy. `vercel.json` pins the install and build commands. GitHub Actions runs tests, type checks, and a production build for pushes to main and pull requests. Git integration creates subsequent deployments from pushes. Sign-in requires Supabase configuration. Set the two public Supabase variables in the Vercel environment and redeploy. Use an HTTPS deployment for install/offline support. Icons are included at 192px and 512px. On iOS use Safari → Share → Add to Home Screen. Web push on iOS requires iOS 16.4+, a Home Screen installation, user permission and a backend push service; no unsupported background timers are offered. Reminders remain disabled and are not medical recommendations.
 
 ## Validation limits
 
-Thirty-one tests cover domain logic, IndexedDB persistence, service-worker cache isolation, backup validation/merge, API authentication rejection, offline sync queues, account boundaries and conflict/retry behavior. Live multi-user RLS tests remain required after migration. Manual browser QA verified starting, switching sides, pausing, reload recovery with notes, saving a feeding, and the 390px mobile dashboard. Actual device installation, service-worker offline recovery, database authorization, and cloud synchronization still need integration tests. Phase 2 requires separate sync/authorization integration tests. Use production build in airplane mode after an initial online load to verify offline behavior on the target device.
+Thirty-two tests cover domain logic, IndexedDB persistence, service-worker cache isolation, backup validation/merge, API authentication rejection, offline sync queues, account boundaries and conflict/retry behavior. Live multi-user RLS tests remain required after migration. Manual browser QA verified starting, switching sides, pausing, reload recovery with notes, saving a feeding, and the 390px mobile dashboard. Actual device installation, service-worker offline recovery, database authorization, and cloud synchronization still need integration tests. Phase 2 requires separate sync/authorization integration tests. Use production build in airplane mode after an initial online load to verify offline behavior on the target device.
 
 ## Phone acceptance testing
 

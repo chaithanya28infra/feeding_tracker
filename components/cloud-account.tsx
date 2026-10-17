@@ -17,13 +17,16 @@ type CloudBaby = {
 export function CloudAccount({
   state,
   onMerge,
+  authOnly = false,
 }: {
   state: State;
   onMerge: (backup: State) => Promise<void>;
+  authOnly?: boolean;
 }) {
   const [session, setSession] = useState<Session | null>(null),
     [configured, setConfigured] = useState<boolean | null>(null),
     [signup, setSignup] = useState(false),
+    [clearOnSignOut, setClearOnSignOut] = useState(false),
     [busy, setBusy] = useState(false),
     [autoActive, setAutoActive] = useState(false),
     [message, setMessage] = useState(""),
@@ -54,7 +57,8 @@ export function CloudAccount({
     const client = getSupabase();
     if (!client) throw Error("Supabase is not configured.");
     const { data } = await client.auth.getSession();
-    if (!data.session) throw Error("Please sign in again.");
+    if (!data.session || data.session.user.id !== session?.user.id)
+      throw Error("Your account changed. Please try again.");
     const response = await fetch(path, {
       method: body ? "POST" : "GET",
       cache: "no-store",
@@ -77,7 +81,7 @@ export function CloudAccount({
     setSelected("");
     setError("");
     let cancelled = false;
-    if (session?.user.id)
+    if (session?.user.id && !authOnly)
       request("/api/cloud")
         .then((result) => {
           if (!cancelled) setBabies(result.babies);
@@ -88,7 +92,7 @@ export function CloudAccount({
     return () => {
       cancelled = true;
     };
-  }, [session?.user.id]);
+  }, [session?.user.id, authOnly]);
   async function perform(fn: () => Promise<void>) {
     setBusy(true);
     setError("");
@@ -107,7 +111,8 @@ export function CloudAccount({
     <section className="cloud-account" aria-labelledby="account-title">
       <div className="card-heading">
         <h2 id="account-title">
-          <Cloud size={21} /> Account & cloud backup
+          <Cloud size={21} />{" "}
+          {authOnly ? "Welcome to your little nest" : "Account & cloud backup"}
         </h2>
         {session && (
           <button
@@ -115,6 +120,19 @@ export function CloudAccount({
             disabled={busy}
             onClick={() =>
               perform(async () => {
+                if (
+                  clearOnSignOut &&
+                  !confirm(
+                    "Remove this account’s care logs and any unsynced changes from this device? Cloud backups stay saved.",
+                  )
+                )
+                  return;
+                if (clearOnSignOut) {
+                  const { clearAccountData, pauseSync } =
+                    await import("@/lib/storage");
+                  await pauseSync();
+                  await clearAccountData(session.user.id);
+                }
                 const { error } = await getSupabase()!.auth.signOut({
                   scope: "local",
                 });
@@ -132,14 +150,12 @@ export function CloudAccount({
         <p className="muted">Checking account connection…</p>
       ) : !configured ? (
         <p>
-          Add your project URL and publishable key to .env.local to enable
-          account sign-in.
+          Account sign-in is temporarily unavailable. Please try again later.
         </p>
       ) : !session ? (
         <>
           <p>
-            Create an account or sign in to back up saved care logs. Using the
-            app without an account still works.
+            Sign in or create an account to open your family’s care tracker.
           </p>
           <div
             className="account-mode-switch"
@@ -235,6 +251,8 @@ export function CloudAccount({
             </div>
           </form>
         </>
+      ) : authOnly ? (
+        <p role="status">Opening your tracker…</p>
       ) : (
         <>
           <p>
@@ -243,6 +261,14 @@ export function CloudAccount({
             backups upload when you choose <strong>Back up now</strong>; enabled
             sync also uploads automatically.
           </p>
+          <label className="signout-option">
+            <input
+              type="checkbox"
+              checked={clearOnSignOut}
+              onChange={(e) => setClearOnSignOut(e.target.checked)}
+            />
+            Remove this account’s device logs when signing out
+          </label>
           <label>
             Cloud baby profile
             <select
@@ -361,14 +387,16 @@ export function CloudAccount({
           </p>
         </>
       )}
-      <Caregivers
-        userId={session?.user.id ?? null}
-        babyId={selected}
-        onAccepted={async (id) => {
-          await refresh();
-          setSelected(id);
-        }}
-      />
+      {!authOnly && (
+        <Caregivers
+          userId={session?.user.id ?? null}
+          babyId={selected}
+          onAccepted={async (id) => {
+            await refresh();
+            setSelected(id);
+          }}
+        />
+      )}
       {error && (
         <p role="alert" className="validation">
           {error}

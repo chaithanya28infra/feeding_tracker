@@ -52,11 +52,12 @@ import {
   type Feed,
   type Diaper,
 } from "@/lib/model";
-import { loadState, saveState } from "@/lib/storage";
+import { loadState, saveState, getStorageUser } from "@/lib/storage";
 import { Button } from "@/components/ui/button";
 import { CloudAccount } from "@/components/cloud-account";
 import { AutomaticSyncStatus } from "@/components/automatic-sync";
 import { mergeBackup } from "@/lib/cloud-validation";
+import { AccountGate } from "@/components/account-gate";
 type Tab = "Home" | "Feeding" | "Diapers" | "History" | "Settings" | "Insights";
 const nav = [
   { name: "Home", icon: Home },
@@ -66,6 +67,13 @@ const nav = [
   { name: "Insights", icon: BarChart3 },
 ] as const;
 export default function App() {
+  return (
+    <AccountGate>
+      {(userId) => <Tracker key={userId} userId={userId} />}
+    </AccountGate>
+  );
+}
+function Tracker({ userId }: { userId: string }) {
   const [state, setState] = useState<State>(initialState),
     [ready, setReady] = useState(false),
     [tab, setTab] = useState<Tab>("Home"),
@@ -107,7 +115,7 @@ export default function App() {
     const on = () => setOnline(navigator.onLine);
     window.addEventListener("online", on);
     window.addEventListener("offline", on);
-    channel.current = new BroadcastChannel("littlenest");
+    channel.current = new BroadcastChannel(`littlenest-${userId}`);
     channel.current.onmessage = (e) => {
       current.current = e.data;
       setState(e.data);
@@ -138,13 +146,20 @@ export default function App() {
   useEffect(() => {
     let alive = true;
     const refresh = () => {
-      loadState().then((s) => {
-        if (alive) {
-          current.current = s;
-          setState(s);
-          channel.current?.postMessage(s);
-        }
-      });
+      loadState()
+        .then((s) => {
+          if (alive && getStorageUser() === userId) {
+            current.current = s;
+            setState(s);
+            channel.current?.postMessage(s);
+          }
+        })
+        .catch(() => {
+          if (alive && getStorageUser() === userId)
+            setError(
+              "Could not refresh device logs. Please reload and try again.",
+            );
+        });
     };
     window.addEventListener("littlenest-data", refresh);
     return () => {
@@ -154,6 +169,7 @@ export default function App() {
   }, []);
   async function update(fn: (s: State) => State) {
     try {
+      if (getStorageUser() !== userId) return;
       const next = fn(current.current);
       await saveState(next);
       current.current = next;
@@ -168,10 +184,11 @@ export default function App() {
   async function locked(fn: () => Promise<void>) {
     if (navigator.locks)
       await navigator.locks.request("littlenest-write", async () => {
+        if (getStorageUser() !== userId) return;
         current.current = await loadState();
         await fn();
       });
-    else await fn();
+    else if (getStorageUser() === userId) await fn();
   }
   async function start(side: Side) {
     await locked(async () => {

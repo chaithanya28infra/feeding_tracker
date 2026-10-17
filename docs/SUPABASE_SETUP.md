@@ -13,7 +13,7 @@ These migrations target a fresh project; do not rerun migration 001 if it has al
 
 ## Authentication
 
-Enable Email authentication in Supabase Authentication → Providers. Under URL Configuration, use the deployment origin as Site URL and allow the development origin (`http://localhost:3000`) and exact deployment origins as Redirect URLs. The Settings account form offers email/password account creation and sign-in. If email confirmation is enabled, confirm the received link before signing in. Never share your password or secret/service-role key in chat.
+Enable Email authentication in Supabase Authentication → Providers. Under URL Configuration, use the deployment origin as Site URL and allow the development origin (`http://localhost:3000`) and exact deployment origins as Redirect URLs. The welcome page requires email/password sign-in or account creation before mounting the tracker. Each account has separate IndexedDB state, active timer, and sync queue; signed-out parents see no care history. Existing legacy logs linked to a sync account migrate to that same account. Unlinked legacy logs require an explicit import choice, or parents can start fresh while preserving the original copy. Signing out keeps device logs unless the removal option is selected in Settings. If email confirmation is enabled, confirm the received link before signing in. Never share your password or secret/service-role key in chat.
 
 ## Password recovery
 
@@ -33,7 +33,7 @@ After deploying, test with your own account: request an email, open the link, en
 
 Set a real baby name and birth date in Settings. Sign in, choose a new cloud profile or an existing one, and press **Back up now**. Nothing uploads merely because you sign in. A backup includes saved care history and baby details; active timers remain device-local. Finish an active feed before backing up.
 
-On another device, sign in to the same account, select the baby and choose **Restore / merge**. Review the confirmation. Local event IDs win over the same IDs in a backup; existing local entries are retained, and baby details come from the backup. Export important local data first if you want a separate copy. Signing out leaves device logs in place. Restore imports data into the app's single local baby profile: do not merge different babies' histories.
+On another device, sign in to the same account, select the baby and choose **Restore / merge**. Review the confirmation. Local event IDs win over the same IDs in a backup; existing local entries are retained, and baby details come from the backup. Export important local data first if you want a separate copy. Signing out leaves device logs in place. Restore imports data into the account's single local baby profile: do not merge different babies' histories.
 
 Manual snapshots work after migrations 001 and 002. Migration 003 adds optional automatic same-account snapshot sync; see AUTOMATIC_SYNC.md. Migration 004 adds caregiver invitations; see CAREGIVERS.md. Shared active timers and normalized event-level realtime sync remain pending. The normalized event tables are foundations for the next milestone; backups use the separate baby_backups table.
 
